@@ -1,0 +1,385 @@
+
+<!--
+    Project Name : SFIP (Startup Failure Intelligence Platform)
+    File Name    : index.html
+    File Path    : src/main/resources/static/index.html
+    Package      : N/A (Frontend static resource)
+
+    Purpose:
+    Entry point for the SFIP web application.
+
+    Responsibilities:
+    1. Display Login and Registration forms.
+    2. Provide accessible form inputs and validation hooks.
+    3. Load application styles and JavaScript modules.
+    4. Serve as the authentication entry page.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="SFIP - Startup Failure Intelligence Platform."
+    >
+
+    <meta name="theme-color" content="#10131c">
+
+    <title>SFIP | Startup Intelligence</title>
+
+    <!-- Application stylesheet -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+    <main class="auth-page">
+
+        <!-- Left: Brand / Introduction -->
+        <section class="auth-intro" aria-label="About SFIP">
+
+            <a href="/" class="brand">
+                <span class="brand-mark" aria-hidden="true">S</span>
+                <span class="brand-name">SFIP</span>
+            </a>
+
+            <div class="intro-content">
+
+                <p class="eyebrow">
+                    STARTUP INTELLIGENCE PLATFORM
+                </p>
+
+                <h1>
+                    Build smarter.<br>
+                    <span>Fail less.</span>
+                </h1>
+
+                <p class="intro-description">
+                    Understand the risks behind your startup idea.
+                    Learn from past startup failures and make
+                    more informed decisions.
+                </p>
+
+                <div class="intro-note">
+                    <span class="note-dot" aria-hidden="true"></span>
+                    <span>
+                        Turn startup uncertainty into insight.
+                    </span>
+                </div>
+
+            </div>
+
+            <footer class="intro-footer">
+                Startup Failure Intelligence Platform
+            </footer>
+
+        </section>
+
+
+        <!-- Right: Authentication -->
+        <section class="auth-panel" aria-label="Account access">
+
+            <div class="auth-card">
+
+                <!-- Mobile branding -->
+                <div class="mobile-brand">
+                    <span class="brand-mark" aria-hidden="true">S</span>
+                    <span class="brand-name">SFIP</span>
+                </div>
+
+
+                <!-- Authentication heading -->
+                <div class="auth-heading">
+
+                    <p class="eyebrow">
+                        WELCOME TO SFIP
+                    </p>
+
+                    <h2 id="auth-title">
+                        Welcome back
+                    </h2>
+
+                    <p id="auth-subtitle">
+                        Sign in to continue your startup journey.
+                    </p>
+
+                </div>
+
+
+                <!-- Authentication tabs -->
+                <div
+                    class="auth-tabs"
+                    role="tablist"
+                    aria-label="Authentication options"
+                >
+
+                    <button
+                        type="button"
+                        class="auth-tab active"
+                        id="login-tab"
+                        role="tab"
+                        aria-selected="true"
+                        aria-controls="login-panel"
+                    >
+                        Login
+                    </button>
+
+                    <button
+                        type="button"
+                        class="auth-tab"
+                        id="register-tab"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="register-panel"
+                        tabindex="-1"
+                    >
+                        Create account
+                    </button>
+
+                </div>
+
+
+                <!-- Login form -->
+                <div
+                    id="login-panel"
+                    class="auth-form-panel"
+                    role="tabpanel"
+                    aria-labelledby="login-tab"
+                >
+
+                    <form id="login-form">
+
+                        <div class="form-group">
+
+                            <label for="login-email">
+                                Email address
+                            </label>
+
+                            <input
+                                type="email"
+                                id="login-email"
+                                name="email"
+                                placeholder="you@example.com"
+                                maxlength="255"
+                                autocomplete="email"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="login-password">
+                                Password
+                            </label>
+
+                            <div class="password-input-wrapper">
+
+                                <input
+                                    type="password"
+                                    id="login-password"
+                                    name="password"
+                                    placeholder="Enter your password"
+                                    autocomplete="current-password"
+                                    required
+                                >
+
+                                <button
+                                    type="button"
+                                    class="password-toggle"
+                                    id="login-password-toggle"
+                                    aria-label="Show password"
+                                    aria-pressed="false"
+                                >
+                                    <svg
+                                        class="eye-icon"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="1.8"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        aria-hidden="true"
+                                    >
+                                        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        <button
+                            type="submit"
+                            class="primary-btn"
+                            id="login-submit"
+                        >
+                            Sign in
+                            <span aria-hidden="true">→</span>
+                        </button>
+
+
+                        <p
+                            class="form-message"
+                            id="login-message"
+                            role="status"
+                            aria-live="polite"
+                        ></p>
+
+                    </form>
+
+                </div>
+
+
+                <!-- Registration form -->
+                <div
+                    id="register-panel"
+                    class="auth-form-panel"
+                    role="tabpanel"
+                    aria-labelledby="register-tab"
+                    hidden
+                >
+
+                    <form id="register-form">
+
+                        <div class="form-group">
+
+                            <label for="register-name">
+                                Full name
+                            </label>
+
+                            <input
+                                type="text"
+                                id="register-name"
+                                name="name"
+                                placeholder="Enter your name"
+                                maxlength="100"
+                                autocomplete="name"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="register-email">
+                                Email address
+                            </label>
+
+                            <input
+                                type="email"
+                                id="register-email"
+                                name="email"
+                                placeholder="you@example.com"
+                                maxlength="255"
+                                autocomplete="email"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="register-password">
+                                Password
+                            </label>
+
+                            <div class="password-input-wrapper">
+
+                                <input
+                                    type="password"
+                                    id="register-password"
+                                    name="password"
+                                    placeholder="Minimum 8 characters"
+                                    minlength="8"
+                                    maxlength="72"
+                                    autocomplete="new-password"
+                                    required
+                                >
+
+                                <button
+                                    type="button"
+                                    class="password-toggle"
+                                    id="register-password-toggle"
+                                    aria-label="Show password"
+                                    aria-pressed="false"
+                                >
+                                    <svg
+                                        class="eye-icon"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="1.8"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        aria-hidden="true"
+                                    >
+                                        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                </button>
+
+                            </div>
+
+                            <small class="field-hint">
+                                Use a strong password with at least
+                                8 characters.
+                            </small>
+
+                        </div>
+
+
+                        <button
+                            type="submit"
+                            class="primary-btn"
+                            id="register-submit"
+                        >
+                            Create account
+                            <span aria-hidden="true">→</span>
+                        </button>
+
+
+                        <p
+                            class="form-message"
+                            id="register-message"
+                            role="status"
+                            aria-live="polite"
+                        ></p>
+
+                    </form>
+
+                </div>
+
+
+                <!-- Privacy disclaimer -->
+                <p class="auth-disclaimer">
+                    Your startup ideas and analysis history
+                    belong to your account.
+                </p>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- Application entry module -->
+    <script type="module" src="/js/app.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,631 @@
+
+/*
+ * Project Name : SFIP (Startup Failure Intelligence Platform)
+ * File Name    : style.css
+ * File Path    : src/main/resources/static/css/style.css
+ * Package      : N/A (Frontend stylesheet)
+ *
+ * Purpose:
+ * Provides the visual styling for the SFIP authentication page.
+ *
+ * Responsibilities:
+ * 1. Define the application design system.
+ * 2. Style login and registration forms.
+ * 3. Handle interactive states and validation feedback.
+ * 4. Provide responsive layouts for different screen sizes.
+ *
+ * Usage:
+ * Linked from static/index.html.
+ */
+
+/* =========================================
+   1. DESIGN SYSTEM
+========================================= */
+
+:root {
+    --bg-primary: #0c0f17;
+    --bg-secondary: #111622;
+    --bg-card: #141a27;
+
+    --text-primary: #f3f5fa;
+    --text-secondary: #9ba5b7;
+    --text-muted: #727e92;
+
+    --accent: #a3e635;
+    --accent-hover: #b6f451;
+    --accent-text: #17210a;
+
+    --border: #293244;
+    --input-bg: #0f1420;
+
+    --danger: #ff7777;
+    --success: #a3e635;
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+
+    --transition: 180ms ease;
+}
+
+/* =========================================
+   2. RESET & BASE
+========================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+    color-scheme: dark;
+}
+
+body {
+    min-height: 100vh;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+/* =========================================
+   3. PAGE LAYOUT
+========================================= */
+
+.auth-page {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+/* =========================================
+   4. INTRO / BRAND SECTION
+========================================= */
+
+.auth-intro {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 44px 8%;
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            ellipse at 15% 25%,
+            rgba(163, 230, 53, 0.09),
+            transparent 48%
+        ),
+        radial-gradient(
+            ellipse at 80% 90%,
+            rgba(67, 97, 238, 0.08),
+            transparent 45%
+        ),
+        var(--bg-secondary);
+
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.auth-intro::after {
+    content: "";
+    position: absolute;
+    width: 420px;
+    height: 420px;
+    right: -180px;
+    bottom: -180px;
+
+    border: 1px solid rgba(163, 230, 53, 0.12);
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 45px rgba(163, 230, 53, 0.025),
+        0 0 0 90px rgba(163, 230, 53, 0.02);
+
+    pointer-events: none;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    width: fit-content;
+    z-index: 1;
+}
+
+.brand-mark {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+
+    border-radius: 13px;
+    background: var(--accent);
+    color: var(--accent-text);
+
+    font-size: 24px;
+    font-weight: 900;
+}
+
+.brand-name {
+    font-size: 23px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+}
+
+.intro-content {
+    max-width: 510px;
+    margin: 60px 0;
+    z-index: 1;
+}
+
+.eyebrow {
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.intro-content h1 {
+    margin-top: 22px;
+    font-size: clamp(44px, 5vw, 70px);
+    line-height: 1.08;
+    letter-spacing: -3px;
+    font-weight: 800;
+}
+
+.intro-content h1 span {
+    color: var(--accent);
+}
+
+.intro-description {
+    max-width: 430px;
+    margin-top: 24px;
+
+    color: var(--text-secondary);
+    font-size: 16px;
+    line-height: 1.85;
+}
+
+.intro-note {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 32px;
+
+    color: #c9d2df;
+    font-size: 13px;
+}
+
+.note-dot {
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 14px rgba(163, 230, 53, 0.5);
+}
+
+.intro-footer {
+    color: var(--text-muted);
+    font-size: 12px;
+    z-index: 1;
+}
+
+/* =========================================
+   5. AUTHENTICATION SECTION
+========================================= */
+
+.auth-panel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 48px 24px;
+    background:
+        radial-gradient(
+            ellipse at 80% 10%,
+            rgba(255, 255, 255, 0.025),
+            transparent 50%
+        ),
+        var(--bg-primary);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+}
+
+.mobile-brand {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 36px;
+}
+
+.auth-heading {
+    margin-bottom: 28px;
+}
+
+.auth-heading h2 {
+    margin-top: 10px;
+    font-size: 32px;
+    font-weight: 750;
+    letter-spacing: -1.1px;
+}
+
+.auth-heading > p:last-child {
+    margin-top: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* =========================================
+   6. AUTHENTICATION TABS
+========================================= */
+
+.auth-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+
+    padding: 5px;
+    margin-bottom: 28px;
+
+    background: #111622;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
+.auth-tab {
+    padding: 11px 12px;
+    border: none;
+    border-radius: 8px;
+
+    color: var(--text-secondary);
+    background: transparent;
+
+    font-size: 13px;
+    font-weight: 650;
+
+    transition:
+        color var(--transition),
+        background var(--transition);
+}
+
+.auth-tab:hover {
+    color: var(--text-primary);
+}
+
+.auth-tab.active {
+    background: #252d3c;
+    color: var(--text-primary);
+}
+
+/* =========================================
+   7. FORMS
+========================================= */
+
+.auth-form-panel {
+    width: 100%;
+}
+
+.auth-form-panel form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.form-group label {
+    color: #dfe4ee;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.form-group input {
+    width: 100%;
+    min-height: 49px;
+    padding: 13px 15px;
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+
+    background: var(--input-bg);
+    color: var(--text-primary);
+
+    font-size: 14px;
+    transition:
+        border-color var(--transition),
+        box-shadow var(--transition);
+}
+
+.form-group input::placeholder {
+    color: #677287;
+}
+
+.form-group input:hover {
+    border-color: #414d62;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(163, 230, 53, 0.09);
+}
+
+.form-group input:invalid:not(:placeholder-shown) {
+    border-color: var(--danger);
+}
+
+.field-hint {
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+/* =========================================
+   8. PRIMARY BUTTON
+========================================= */
+
+.primary-btn {
+    width: 100%;
+    min-height: 50px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    padding: 13px 18px;
+    margin-top: 2px;
+
+    border: none;
+    border-radius: var(--radius-sm);
+
+    background: var(--accent);
+    color: var(--accent-text);
+
+    font-size: 14px;
+    font-weight: 800;
+
+    transition:
+        background var(--transition),
+        transform var(--transition),
+        opacity var(--transition);
+}
+
+.primary-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+.primary-btn:active {
+    transform: translateY(0);
+}
+
+.primary-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.primary-btn span {
+    font-size: 20px;
+    line-height: 1;
+}
+
+/* =========================================
+   9. FORM MESSAGES
+========================================= */
+
+.form-message {
+    min-height: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.form-message:empty {
+    display: none;
+}
+
+.form-message.error {
+    color: var(--danger);
+}
+
+.form-message.success {
+    color: var(--success);
+}
+
+.auth-disclaimer {
+    margin-top: 28px;
+    padding-top: 20px;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.8;
+    text-align: center;
+}
+
+/* =========================================
+   10. RESPONSIVE DESIGN
+========================================= */
+
+@media (max-width: 900px) {
+    .auth-page {
+        grid-template-columns: 0.85fr 1.15fr;
+    }
+
+    .auth-intro {
+        padding: 36px 7%;
+    }
+
+    .intro-content h1 {
+        font-size: clamp(40px, 6vw, 55px);
+        letter-spacing: -2px;
+    }
+
+    .intro-description {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 680px) {
+    .auth-page {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-intro {
+        display: none;
+    }
+
+    .auth-panel {
+        min-height: 100vh;
+        padding: 32px 22px;
+    }
+
+    .auth-card {
+        max-width: 420px;
+    }
+
+    .mobile-brand {
+        display: flex;
+    }
+
+    .auth-heading h2 {
+        font-size: 29px;
+    }
+}
+
+@media (max-width: 380px) {
+    .auth-panel {
+        padding: 24px 16px;
+    }
+
+    .auth-heading h2 {
+        font-size: 26px;
+    }
+
+    .auth-tabs {
+        margin-bottom: 22px;
+    }
+}
+
+/* =========================================
+   11. REDUCED MOTION
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
+
+/* =========================================
+   11. PASSWORD INPUT & SHOW/HIDE TOGGLE
+========================================= */
+
+/* Password input and eye button wrapper */
+.password-input-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+/* Keep password text clear of the eye button */
+.password-input-wrapper input {
+    width: 100%;
+    padding-right: 50px;
+}
+
+/* Password visibility toggle button */
+.password-toggle {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+
+    width: 40px;
+    height: 40px;
+
+    display: grid;
+    place-items: center;
+
+    padding: 0;
+    border: none;
+    border-radius: 7px;
+
+    background: transparent;
+    color: var(--text-muted);
+
+    transition:
+        color var(--transition),
+        background var(--transition);
+}
+
+/* Hover state */
+.password-toggle:hover {
+    color: var(--accent);
+    background: rgba(163, 230, 53, 0.07);
+}
+
+/* Keyboard focus */
+.password-toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* Eye icon */
+.password-toggle .eye-icon {
+    width: 21px;
+    height: 21px;
+    display: block;
+    pointer-events: none;
+}
+
+/* Active/pressed state */
+.password-toggle[aria-pressed="true"] {
+    color: var(--accent);
+}
+
