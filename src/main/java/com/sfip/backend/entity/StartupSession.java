@@ -52,8 +52,9 @@ public class StartupSession {
     @Column(name = "startup_idea", nullable = false, columnDefinition = "TEXT")
     private String startupIdea;
 
-    // Stores ML similarity analysis output.
-    // Format will be finalized when ML integration is implemented.
+ // Stores the consolidated ML analysis result as JSON.
+ // Includes prediction status, prediction output, similarity status,
+ // similar startup records, and relevant failure information.
     @Column(name = "ml_result", columnDefinition = "TEXT")
     private String mlResult;
 

@@ -6,27 +6,36 @@ import com.sfip.backend.integration.analysis.AnalysisResult;
 import org.springframework.stereotype.Service;
 
 /**
+ * ============================================================================
  * File Name: StartupAnalysisService.java
  * Project: Startup Failure Intelligence Platform (SFIP)
- *
+ * ----------------------------------------------------------------------------
  * Description:
- * Provides the application-level service for startup
- * idea analysis by delegating analysis requests to
- * the configured AnalysisProvider.
+ * Provides the application-level service for analyzing startup ideas.
  *
  * Responsibilities:
- * 1. Validate the startup idea.
- * 2. Delegate analysis to the configured provider.
- * 3. Return the standardized AnalysisResult.
- * 4. Keep the application independent of provider-specific
- *    implementation details.
+ * 1. Validate the startup idea received from the application.
+ * 2. Delegate analysis to the configured AnalysisProvider.
+ * 3. Return a standardized AnalysisResult containing the ML result
+ *    and the final AI-generated report.
+ * 4. Keep the application independent of provider-specific implementations.
+ *
+ * Architecture:
+ * Controller
+ *     -> StartupSessionService
+ *         -> StartupAnalysisService
+ *             -> AnalysisProvider
+ *                 -> Groq + ML Integration
  *
  * Notes:
- * - Currently uses GeminiOnlyProvider through AnalysisProvider.
- * - Future ML integration should not require changes
- *   to this service's analysis contract.
- * - Session management and report persistence are handled
- *   separately by the session workflow.
+ * - Groq-based feature extraction and report generation are handled
+ *   by the configured AnalysisProvider implementation.
+ * - ML prediction and similar-startup retrieval are orchestrated
+ *   by the provider, not by this service.
+ * - This service does not directly communicate with external APIs.
+ * - Session persistence and status management remain the responsibility
+ *   of StartupSessionService.
+ * ============================================================================
  *
  * Author: SFIP Development Team
  */
@@ -40,10 +49,11 @@ public class StartupAnalysisService {
     }
 
     /**
-     * Analyzes a startup idea using the configured provider.
+     * Analyzes a startup idea using the configured analysis provider.
      *
-     * @param startupIdea the user's startup idea
-     * @return standardized startup analysis result
+     * @param startupIdea original startup idea submitted by the user
+     * @return standardized result containing ML data and AI report
+     * @throws IllegalArgumentException if the startup idea is empty
      */
     public AnalysisResult analyzeStartup(String startupIdea) {
 

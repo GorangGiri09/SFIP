@@ -9,12 +9,12 @@
  *
  * Responsibilities:
  * 1. Handle login submission.
- * 2. Handle registration submission.
+ * 2. Handle registration submission without automatic login.
  * 3. Validate user input.
  * 4. Display authentication messages.
  * 5. Manage button loading states.
  * 6. Toggle password visibility.
- * 7. Redirect after successful authentication.
+ * 7. Redirect after successful login.
  */
 
 import {
@@ -71,6 +71,7 @@ let handlersInitialized = false;
  * @returns {string}
  */
 function getInputValue(inputId) {
+
     const input = document.getElementById(inputId);
 
     if (!input) {
@@ -94,6 +95,7 @@ function getInputValue(inputId) {
 // =========================================
 
 export function initializeAuthHandlers() {
+
     if (handlersInitialized) {
         return;
     }
@@ -143,6 +145,7 @@ export function initializeAuthHandlers() {
 // =========================================
 
 function setupPasswordToggle(inputId, buttonId) {
+
     const passwordInput =
         document.getElementById(inputId);
 
@@ -150,6 +153,7 @@ function setupPasswordToggle(inputId, buttonId) {
         document.getElementById(buttonId);
 
     if (!passwordInput || !toggleButton) {
+
         console.warn(
             `Password toggle elements unavailable: ${inputId}`
         );
@@ -161,6 +165,7 @@ function setupPasswordToggle(inputId, buttonId) {
     toggleButton.type = "button";
 
     toggleButton.addEventListener("click", () => {
+
         const isHidden =
             passwordInput.type === "password";
 
@@ -190,6 +195,7 @@ function setupPasswordToggle(inputId, buttonId) {
 // =========================================
 
 async function handleLogin(event) {
+
     event.preventDefault();
 
     if (loginInProgress) {
@@ -201,6 +207,7 @@ async function handleLogin(event) {
     let authenticationSucceeded = false;
 
     try {
+
         const email =
             getInputValue("login-email").trim();
 
@@ -209,6 +216,7 @@ async function handleLogin(event) {
             getInputValue("login-password");
 
         if (!email || !password) {
+
             showMessage(
                 loginMessage,
                 "Please enter your email and password.",
@@ -222,6 +230,7 @@ async function handleLogin(event) {
             email.length > MAX_EMAIL_LENGTH ||
             !EMAIL_PATTERN.test(email)
         ) {
+
             showMessage(
                 loginMessage,
                 "Please enter a valid email address.",
@@ -256,14 +265,18 @@ async function handleLogin(event) {
         window.location.assign("/dashboard.html");
 
     } catch (error) {
+
         console.error("Login failed:", error);
 
         // Clear authentication only if login succeeded
         // but subsequent profile verification failed.
         if (authenticationSucceeded) {
+
             try {
                 logout();
+
             } catch (cleanupError) {
+
                 console.error(
                     "Authentication cleanup failed:",
                     cleanupError
@@ -278,6 +291,7 @@ async function handleLogin(event) {
         );
 
     } finally {
+
         loginInProgress = false;
 
         setLoading(
@@ -294,6 +308,7 @@ async function handleLogin(event) {
 // =========================================
 
 async function handleRegister(event) {
+
     event.preventDefault();
 
     if (registrationInProgress) {
@@ -302,9 +317,8 @@ async function handleRegister(event) {
 
     clearMessage(registerMessage);
 
-    let authenticationSucceeded = false;
-
     try {
+
         const name =
             getInputValue("register-name").trim();
 
@@ -317,6 +331,7 @@ async function handleRegister(event) {
 
         // Required fields.
         if (!name || !email || !password) {
+
             showMessage(
                 registerMessage,
                 "Please fill in all required fields.",
@@ -328,6 +343,7 @@ async function handleRegister(event) {
 
         // Name validation.
         if (name.length > MAX_NAME_LENGTH) {
+
             showMessage(
                 registerMessage,
                 "Name cannot exceed 100 characters.",
@@ -342,6 +358,7 @@ async function handleRegister(event) {
             email.length > MAX_EMAIL_LENGTH ||
             !EMAIL_PATTERN.test(email)
         ) {
+
             showMessage(
                 registerMessage,
                 "Please enter a valid email address.",
@@ -353,6 +370,7 @@ async function handleRegister(event) {
 
         // Password validation.
         if (password.length < MIN_PASSWORD_LENGTH) {
+
             showMessage(
                 registerMessage,
                 "Password must be at least 8 characters long.",
@@ -367,6 +385,7 @@ async function handleRegister(event) {
             new TextEncoder().encode(password).length;
 
         if (passwordBytes > MAX_PASSWORD_BYTES) {
+
             showMessage(
                 registerMessage,
                 "Password must not exceed 72 UTF-8 bytes.",
@@ -384,41 +403,41 @@ async function handleRegister(event) {
             "Creating account..."
         );
 
-        // Register user and store JWT.
+        // Create account without automatically logging in.
         await register(name, email, password);
 
-        authenticationSucceeded = true;
+        // Clear registration form password after success.
+        document.getElementById("register-password").value = "";
 
-        // Verify authentication using backend profile.
-        await getCurrentUser();
+        // Prefill the registered email in the login form.
+        const loginEmailInput =
+            document.getElementById("login-email");
 
+        if (loginEmailInput) {
+            loginEmailInput.value = email;
+        }
+
+        // Switch to the Login tab.
+        const loginTab =
+            document.getElementById("login-tab");
+
+        if (loginTab) {
+            loginTab.click();
+        }
+
+        // Show success feedback on the Login form.
         showMessage(
-            registerMessage,
-            "Account created successfully. Redirecting...",
+            loginMessage,
+            "Account created successfully. Please log in.",
             "success"
         );
 
-        window.location.assign("/dashboard.html");
-
     } catch (error) {
+
         console.error(
             "Registration failed:",
             error
         );
-
-        // Registration may have succeeded on the server.
-        // Clear client authentication if profile verification
-        // fails after a successful auth response.
-        if (authenticationSucceeded) {
-            try {
-                logout();
-            } catch (cleanupError) {
-                console.error(
-                    "Authentication cleanup failed:",
-                    cleanupError
-                );
-            }
-        }
 
         showMessage(
             registerMessage,
@@ -427,6 +446,7 @@ async function handleRegister(event) {
         );
 
     } finally {
+
         registrationInProgress = false;
 
         setLoading(
@@ -443,6 +463,7 @@ async function handleRegister(event) {
 // =========================================
 
 function showMessage(element, message, type) {
+
     if (!element) {
         return;
     }
@@ -466,6 +487,7 @@ function showMessage(element, message, type) {
 
 
 function clearMessage(element) {
+
     if (!element) {
         return;
     }
@@ -486,6 +508,7 @@ function clearMessage(element) {
 // =========================================
 
 function setLoading(button, loading, text) {
+
     if (!button) {
         return;
     }
@@ -502,6 +525,7 @@ function setLoading(button, loading, text) {
     );
 
     if (!loading) {
+
         const arrow = document.createElement("span");
 
         arrow.setAttribute(
@@ -521,6 +545,7 @@ function setLoading(button, loading, text) {
 // =========================================
 
 function getErrorMessage(error, operation) {
+
     const status =
         error?.response?.status ??
         error?.status;
@@ -533,6 +558,7 @@ function getErrorMessage(error, operation) {
         errorCode === "REQUEST_TIMEOUT" ||
         status === 0
     ) {
+
         return errorCode === "REQUEST_TIMEOUT"
             ? "The request timed out. Please try again."
             : "Unable to connect to the server. Please check your connection.";
@@ -540,6 +566,7 @@ function getErrorMessage(error, operation) {
 
     // Invalid input.
     if (status === 400) {
+
         return (
             error?.data?.message ??
             error?.response?.data?.message ??
@@ -549,6 +576,7 @@ function getErrorMessage(error, operation) {
 
     // Authentication failure.
     if (status === 401) {
+
         return operation === "login"
             ? "Invalid email or password."
             : "Authentication failed. Please try again.";

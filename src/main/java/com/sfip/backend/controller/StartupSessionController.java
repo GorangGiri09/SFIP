@@ -1,28 +1,37 @@
 
 /*
- * ============================================================
+ * ============================================================================
  * Project Name : SFIP (Startup Failure Intelligence Platform)
  * File Name    : StartupSessionController.java
  * Package      : com.sfip.backend.controller
  * File Path    : src/main/java/com/sfip/backend/controller/StartupSessionController.java
- *
+ * ----------------------------------------------------------------------------
  * Purpose:
- * Exposes authenticated APIs for startup analysis sessions.
+ * Exposes authenticated REST APIs for startup analysis sessions.
  *
  * Responsibilities:
  * 1. Creates new startup analysis sessions.
- * 2. Triggers startup analysis.
+ * 2. Triggers the complete Groq + ML analysis workflow.
  * 3. Retrieves the authenticated user's analysis history.
  * 4. Retrieves individual analysis session details.
  * 5. Enforces session ownership.
- * 6. Returns safe and structured API responses.
+ * 6. Returns structured responses compatible with the frontend.
  *
- * Security Notes:
- * - All endpoints require authentication.
- * - User identity is obtained from Spring Security.
+ * Security:
+ * - Endpoints require authentication through Spring Security.
+ * - User identity is obtained from the authenticated principal.
  * - Client-supplied user IDs are never trusted.
- * - Password information is never exposed.
- * ============================================================
+ * - Session ownership is enforced by StartupSessionService.
+ *
+ * Integration:
+ * Controller -> StartupSessionService -> StartupAnalysisService
+ *            -> AnalysisProvider -> Groq + FastAPI ML Service
+ *
+ * Notes:
+ * - Analysis currently executes synchronously.
+ * - Successful creation returns the final persisted analysis result.
+ * - Failed analysis is not returned as a successful completed session.
+ * ============================================================================
  */
 
 package com.sfip.backend.controller;
@@ -40,12 +49,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.LinkedHashMap;
@@ -59,7 +63,6 @@ public class StartupSessionController {
     private final StartupSessionService startupSessionService;
     private final UserRepository userRepository;
 
-    // Constructor injection.
     public StartupSessionController(
             StartupSessionService startupSessionService,
             UserRepository userRepository) {
@@ -68,13 +71,19 @@ public class StartupSessionController {
         this.userRepository = userRepository;
     }
 
-    // --------------------------------------------------------
-    // POST /api/sessions
-    //
-    // Creates a new startup analysis session.
-    // Triggers analysis using the configured provider.
-    // --------------------------------------------------------
-
+    /**
+     * Creates a session and executes its startup analysis.
+     *
+     * POST /api/sessions
+     *
+     * Request:
+     * {
+     *     "startupIdea": "..."
+     * }
+     *
+     * Returns the completed session using the existing
+     * top-level frontend response contract.
+     */
     @PostMapping
     public ResponseEntity<Map<String, Object>> createSession(
             @Valid @RequestBody CreateSessionRequest request,
@@ -82,21 +91,20 @@ public class StartupSessionController {
 
         User user = getAuthenticatedUser(authentication);
 
-        // Step 1: Create session with PENDING status.
+        // Create a new session with PENDING status.
         StartupSession session =
                 startupSessionService.createSession(
                         user,
                         request.startupIdea()
                 );
 
-        // Step 2: Process analysis.
-        // This currently runs synchronously.
+        // Execute the complete analysis workflow.
         startupSessionService.processAnalysis(
                 session.getId(),
                 user.getId()
         );
 
-        // Step 3: Fetch the latest persisted session.
+        // Fetch the latest persisted session after processing.
         StartupSession updatedSession =
                 startupSessionService
                         .getUserSession(session.getId(), user.getId())
@@ -107,27 +115,34 @@ public class StartupSessionController {
                                 )
                         );
 
-        Map<String, Object> response = new LinkedHashMap<>();
+        if (updatedSession.getStatus() !=
+                com.sfip.backend.entity.AnalysisStatus.COMPLETED) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Startup analysis did not complete successfully."
+            );
+        }
+
+        Map<String, Object> response =
+                toDetailsResponse(updatedSession);
 
         response.put("success", true);
         response.put(
                 "message",
                 "Startup analysis completed successfully."
         );
-        response.put("session", toDetailsResponse(updatedSession));
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
     }
 
-    // --------------------------------------------------------
-    // GET /api/sessions
-    //
-    // Retrieves the authenticated user's analysis history.
-    // Latest sessions appear first.
-    // --------------------------------------------------------
-
+    /**
+     * Retrieves the authenticated user's analysis history.
+     *
+     * GET /api/sessions
+     */
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAnalysisHistory(
             Authentication authentication) {
@@ -150,12 +165,11 @@ public class StartupSessionController {
         return ResponseEntity.ok(response);
     }
 
-    // --------------------------------------------------------
-    // GET /api/sessions/{sessionId}
-    //
-    // Retrieves one session only if it belongs to the user.
-    // --------------------------------------------------------
-
+    /**
+     * Retrieves a session only if it belongs to the authenticated user.
+     *
+     * GET /api/sessions/{sessionId}
+     */
     @GetMapping("/{sessionId}")
     public ResponseEntity<Map<String, Object>> getSessionDetails(
             @PathVariable Long sessionId,
@@ -170,16 +184,18 @@ public class StartupSessionController {
 
         User user = getAuthenticatedUser(authentication);
 
-        StartupSession session = startupSessionService
-                .getUserSession(sessionId, user.getId())
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "Analysis session not found."
-                        )
-                );
+        StartupSession session =
+                startupSessionService
+                        .getUserSession(sessionId, user.getId())
+                        .orElseThrow(() ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Analysis session not found."
+                                )
+                        );
 
-        Map<String, Object> response = new LinkedHashMap<>();
+        Map<String, Object> response =
+                new LinkedHashMap<>();
 
         response.put("success", true);
         response.put("session", toDetailsResponse(session));
@@ -187,15 +203,16 @@ public class StartupSessionController {
         return ResponseEntity.ok(response);
     }
 
-    // --------------------------------------------------------
-    // Resolve authenticated user from Spring Security.
-    // --------------------------------------------------------
-
-    private User getAuthenticatedUser(Authentication authentication) {
+    /**
+     * Resolves the authenticated user using Spring Security.
+     */
+    private User getAuthenticatedUser(
+            Authentication authentication) {
 
         if (authentication == null ||
                 !authentication.isAuthenticated() ||
-                !(authentication.getPrincipal() instanceof UserDetails)) {
+                !(authentication.getPrincipal()
+                        instanceof UserDetails)) {
 
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
@@ -217,14 +234,14 @@ public class StartupSessionController {
                 );
     }
 
-    // --------------------------------------------------------
-    // Convert session to history response.
-    // --------------------------------------------------------
-
+    /**
+     * Converts a session into its history representation.
+     */
     private Map<String, Object> toHistoryResponse(
             StartupSession session) {
 
-        Map<String, Object> item = new LinkedHashMap<>();
+        Map<String, Object> item =
+                new LinkedHashMap<>();
 
         item.put("sessionId", session.getId());
         item.put("startupIdea", session.getStartupIdea());
@@ -235,14 +252,14 @@ public class StartupSessionController {
         return item;
     }
 
-    // --------------------------------------------------------
-    // Convert session to detailed response.
-    // --------------------------------------------------------
-
+    /**
+     * Converts a session into its detailed representation.
+     */
     private Map<String, Object> toDetailsResponse(
             StartupSession session) {
 
-        Map<String, Object> item = toHistoryResponse(session);
+        Map<String, Object> item =
+                toHistoryResponse(session);
 
         item.put("mlResult", session.getMlResult());
         item.put("aiReport", session.getAiReport());
@@ -250,10 +267,9 @@ public class StartupSessionController {
         return item;
     }
 
-    // --------------------------------------------------------
-    // Request DTO for session creation.
-    // --------------------------------------------------------
-
+    /**
+     * Request DTO for creating a startup analysis session.
+     */
     public record CreateSessionRequest(
 
             @NotBlank(message = "Startup idea is required.")

@@ -8,9 +8,9 @@
  * Manages authentication-related API operations.
  *
  * Responsibilities:
- * 1. Register new users.
+ * 1. Register new users without automatically authenticating them.
  * 2. Authenticate existing users.
- * 3. Store the JWT access token in the API client.
+ * 3. Store the JWT access token after successful login.
  * 4. Fetch the currently authenticated user's profile.
  * 5. Clear authentication state during logout.
  */
@@ -23,26 +23,18 @@ import {
 
 
 // =========================================
-// 1. VALIDATION UTILITIES
+// 1. AUTHENTICATION RESPONSE VALIDATION
 // =========================================
 
 /**
- * Validates authentication response and stores
- * the access token returned by the backend.
- *
- * Expected AuthResponse:
- * {
- *   userId,
- *   name,
- *   email,
- *   accessToken,
- *   tokenType
- * }
+ * Validates the authentication response and stores
+ * the access token returned by the login endpoint.
  *
  * @param {object} response
  * @returns {object}
  */
 function handleAuthResponse(response) {
+
     if (
         !response ||
         typeof response !== "object" ||
@@ -70,13 +62,17 @@ function handleAuthResponse(response) {
 
 
 // =========================================
-// 2. REGISTER
+// 2. REGISTRATION
 // =========================================
 
 /**
+ * Registers a new user without storing an access token.
+ *
  * Supports:
  * register(name, email, password)
  * register({ name, email, password })
+ *
+ * Registration does not automatically log in the user.
  *
  * @param {string|object} nameOrUserData
  * @param {string} [email]
@@ -88,6 +84,7 @@ export async function register(
     email,
     password
 ) {
+
     let userData;
 
     if (
@@ -96,7 +93,9 @@ export async function register(
         !Array.isArray(nameOrUserData)
     ) {
         userData = nameOrUserData;
+
     } else {
+
         userData = {
             name: nameOrUserData,
             email,
@@ -127,6 +126,9 @@ export async function register(
         );
     }
 
+    // Ensure registration does not leave an old token active.
+    clearAccessToken();
+
     const response = await apiRequest("/auth/register", {
         method: "POST",
         body: {
@@ -136,7 +138,19 @@ export async function register(
         }
     });
 
-    return handleAuthResponse(response);
+    // Validate successful account creation.
+    // Intentionally do not store the returned JWT.
+    if (
+        !response ||
+        typeof response !== "object" ||
+        response.success === false
+    ) {
+        throw new Error(
+            "Account registration could not be completed."
+        );
+    }
+
+    return response;
 }
 
 
@@ -145,6 +159,8 @@ export async function register(
 // =========================================
 
 /**
+ * Authenticates an existing user and stores the JWT.
+ *
  * Supports:
  * login(email, password)
  * login({ email, password })
@@ -157,6 +173,7 @@ export async function login(
     emailOrCredentials,
     password
 ) {
+
     let credentials;
 
     if (
@@ -165,7 +182,9 @@ export async function login(
         !Array.isArray(emailOrCredentials)
     ) {
         credentials = emailOrCredentials;
+
     } else {
+
         credentials = {
             email: emailOrCredentials,
             password
@@ -216,6 +235,7 @@ export async function login(
  * @returns {Promise<object>}
  */
 export async function getCurrentUser() {
+
     return apiRequest("/api/me", {
         method: "GET"
     });
@@ -232,5 +252,6 @@ export async function getCurrentUser() {
  * This does not revoke the JWT on the server.
  */
 export function logout() {
+
     clearAccessToken();
 }

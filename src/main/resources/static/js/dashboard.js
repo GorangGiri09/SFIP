@@ -1,4 +1,6 @@
+
 /*
+ * ============================================================================
  * Project Name : SFIP (Startup Failure Intelligence Platform)
  * File Name    : dashboard.js
  * File Path    : static/js/dashboard.js
@@ -21,6 +23,7 @@
  * - services/authService.js
  * - api/apiClient.js
  * - modules/dashboardHandlers.js
+ * ============================================================================
  */
 
 // =========================================
@@ -93,10 +96,10 @@ function showMessage(message, type = "info") {
 // =========================================
 
 /**
- * Redirects unauthenticated users to login.
+ * Redirects unauthenticated users to the home/login page.
  */
 function redirectToLogin() {
-    window.location.replace("/login.html");
+    window.location.replace("/index.html");
 }
 
 /**
@@ -244,8 +247,12 @@ function initializeLogout() {
     }
 
     logoutButton.addEventListener("click", () => {
+
+        // Clear the stored authentication token.
         logout();
-        window.location.replace("/login.html");
+
+        // Redirect to the SFIP home page.
+        window.location.replace("/index.html");
     });
 }
 

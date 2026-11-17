@@ -4,17 +4,37 @@
  * Project Name : SFIP (Startup Failure Intelligence Platform)
  * File Name    : StartupSessionService.java
  * Package      : com.sfip.backend.service
+ * File Path    : src/main/java/com/sfip/backend/service/StartupSessionService.java
  *
  * Purpose:
- * Handles business logic for startup analysis sessions.
+ * Handles business logic and lifecycle management of startup
+ * analysis sessions.
  *
  * Responsibilities:
  * 1. Creates startup analysis sessions.
- * 2. Processes startup analysis using StartupAnalysisService.
- * 3. Updates analysis status and saves generated reports.
- * 4. Retrieves analysis history for a user.
- * 5. Retrieves individual sessions with ownership verification.
- * 6. Maintains transactional consistency.
+ * 2. Manages PENDING, PROCESSING, COMPLETED and FAILED states.
+ * 3. Executes AI and ML analysis outside database transactions.
+ * 4. Persists ML results and Groq-generated reports.
+ * 5. Handles analysis failures and independent failure persistence.
+ * 6. Retrieves user analysis history.
+ * 7. Enforces session ownership.
+ * 8. Maintains transactional consistency.
+ *
+ * Analysis Workflow:
+ * PENDING -> PROCESSING -> COMPLETED
+ *
+ * Failure Workflow:
+ * PENDING -> PROCESSING -> FAILED
+ *
+ * Persistence:
+ * - ml_result stores serialized ML analysis JSON.
+ * - ai_report stores the final Groq-generated report.
+ *
+ * Transaction Strategy:
+ * - Database transactions are used for session state changes.
+ * - External AI/ML calls execute without an open DB transaction.
+ * - ML result, AI report and COMPLETED status are saved atomically.
+ * - FAILED status is persisted independently on processing errors.
  *
  * ============================================================
  */
@@ -27,6 +47,9 @@ import com.sfip.backend.entity.User;
 import com.sfip.backend.integration.analysis.AnalysisResult;
 import com.sfip.backend.repository.StartupSessionRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,15 +58,36 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.util.List;
 import java.util.Optional;
 
+
+/**
+ * Application service responsible for startup analysis
+ * session creation, processing and persistence.
+ */
 @Service
 @Transactional(readOnly = true)
 public class StartupSessionService {
 
+    private static final Logger logger =
+            LoggerFactory.getLogger(StartupSessionService.class);
+
     private final StartupSessionRepository startupSessionRepository;
+
     private final StartupAnalysisService startupAnalysisService;
+
     private final TransactionTemplate transactionTemplate;
 
-    // Constructor injection.
+
+    // --------------------------------------------------------
+    // Constructor
+    // --------------------------------------------------------
+
+    /**
+     * Initializes session management dependencies.
+     *
+     * @param startupSessionRepository session persistence layer
+     * @param startupAnalysisService startup analysis orchestrator
+     * @param transactionTemplate transaction management
+     */
     public StartupSessionService(
             StartupSessionRepository startupSessionRepository,
             StartupAnalysisService startupAnalysisService,
@@ -54,11 +98,19 @@ public class StartupSessionService {
         this.transactionTemplate = transactionTemplate;
     }
 
+
     // --------------------------------------------------------
-    // Create a new startup analysis session.
+    // Create Startup Session
     // Initial status: PENDING
     // --------------------------------------------------------
 
+    /**
+     * Creates a new startup analysis session.
+     *
+     * @param user authenticated application user
+     * @param startupIdea original startup description
+     * @return persisted startup session
+     */
     @Transactional
     public StartupSession createSession(
             User user,
@@ -98,20 +150,37 @@ public class StartupSessionService {
         return startupSessionRepository.save(session);
     }
 
+
     // --------------------------------------------------------
-    // Process a pending analysis session.
-    //
-    // 1. Mark session PROCESSING.
-    // 2. Call analysis provider outside DB transaction.
-    // 3. Save report and mark COMPLETED.
-    // 4. On processing failure, mark FAILED.
+    // Process Startup Analysis
     // --------------------------------------------------------
 
+    /**
+     * Processes a pending startup analysis session.
+     *
+     * Processing steps:
+     *
+     * 1. Fetch session and mark PROCESSING.
+     * 2. Execute Groq extraction, ML analysis and final report.
+     * 3. Persist ML JSON and final report.
+     * 4. Mark session COMPLETED.
+     * 5. On failure, independently mark session FAILED.
+     *
+     * External AI and ML requests execute outside database
+     * transactions to prevent long-running transactions.
+     *
+     * @param sessionId target session ID
+     * @param userId authenticated user ID
+     */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public void processAnalysis(Long sessionId, Long userId) {
+    public void processAnalysis(
+            Long sessionId,
+            Long userId) {
 
-        // Transaction 1:
-        // Fetch session and mark PROCESSING.
+        // ----------------------------------------------------
+        // Transaction 1: Mark session PROCESSING
+        // ----------------------------------------------------
+
         String startupIdea = transactionTemplate.execute(status -> {
 
             StartupSession session =
@@ -135,6 +204,7 @@ public class StartupSessionService {
             return session.getStartupIdea();
         });
 
+
         try {
 
             if (startupIdea == null || startupIdea.isBlank()) {
@@ -143,7 +213,11 @@ public class StartupSessionService {
                 );
             }
 
-            // AI call runs without an open DB transaction.
+
+            // ------------------------------------------------
+            // Execute AI and ML workflow outside DB transaction
+            // ------------------------------------------------
+
             AnalysisResult result =
                     startupAnalysisService.analyzeStartup(startupIdea);
 
@@ -156,8 +230,11 @@ public class StartupSessionService {
                 );
             }
 
-            // Transaction 2:
-            // Persist report and COMPLETED status atomically.
+
+            // ------------------------------------------------
+            // Transaction 2: Persist Analysis Results
+            // ------------------------------------------------
+
             transactionTemplate.executeWithoutResult(status -> {
 
                 StartupSession session =
@@ -176,17 +253,30 @@ public class StartupSessionService {
                     );
                 }
 
-                session.setMlResult(null);
+                // Persist serialized ML response.
+                session.setMlResult(result.mlResult());
+
+                // Persist final Groq-generated report.
                 session.setAiReport(result.report());
+
+                // Mark analysis as completed.
                 session.setStatus(AnalysisStatus.COMPLETED);
 
                 startupSessionRepository.save(session);
             });
 
+            logger.info(
+                    "Startup analysis session {} completed successfully.",
+                    sessionId
+            );
+
+
         } catch (RuntimeException exception) {
 
-            // Transaction 3:
-            // Attempt to persist FAILED status independently.
+            // ------------------------------------------------
+            // Transaction 3: Persist FAILED Status
+            // ------------------------------------------------
+
             try {
 
                 transactionTemplate.executeWithoutResult(status -> {
@@ -213,7 +303,18 @@ public class StartupSessionService {
                 // Preserve the original analysis failure.
                 exception.addSuppressed(persistenceException);
 
+                logger.error(
+                        "Unable to persist FAILED status for session {}.",
+                        sessionId,
+                        persistenceException
+                );
             }
+
+            logger.error(
+                    "Startup analysis session {} failed.",
+                    sessionId,
+                    exception
+            );
 
             throw new IllegalStateException(
                     "Startup analysis could not be completed.",
@@ -222,11 +323,20 @@ public class StartupSessionService {
         }
     }
 
+
     // --------------------------------------------------------
-    // Retrieve all analysis sessions belonging to a user.
-    // Newest sessions appear first.
+    // Retrieve User Analysis History
     // --------------------------------------------------------
 
+    /**
+     * Retrieves all startup analysis sessions belonging
+     * to the authenticated user.
+     *
+     * Sessions are ordered newest first.
+     *
+     * @param userId authenticated user ID
+     * @return user's analysis history
+     */
     public List<StartupSession> getUserAnalysisHistory(
             Long userId) {
 
@@ -240,10 +350,18 @@ public class StartupSessionService {
                 .findAllByUser_IdOrderByCreatedAtDesc(userId);
     }
 
+
     // --------------------------------------------------------
-    // Retrieve a session only if it belongs to the given user.
+    // Retrieve Individual User Session
     // --------------------------------------------------------
 
+    /**
+     * Retrieves a session only if it belongs to the specified user.
+     *
+     * @param sessionId target session ID
+     * @param userId authenticated user ID
+     * @return matching session, if available
+     */
     public Optional<StartupSession> getUserSession(
             Long sessionId,
             Long userId) {

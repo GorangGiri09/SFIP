@@ -951,3 +951,334 @@ button:disabled {
         animation-iteration-count: 1 !important;
     }
 }
+
+/* =========================================
+   18. MARKDOWN REPORT
+========================================= */
+
+.analysis-report-heading {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+
+    border-bottom: 1px solid var(--border);
+
+    color: var(--text-primary);
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.6px;
+}
+
+
+/* Main Markdown container */
+
+.analysis-report-content {
+    min-width: 0;
+    width: 100%;
+
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.85;
+
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+
+/* Headings */
+
+.analysis-report-content h1,
+.analysis-report-content h2,
+.analysis-report-content h3,
+.analysis-report-content h4,
+.analysis-report-content h5,
+.analysis-report-content h6 {
+    color: var(--text-primary);
+    font-weight: 750;
+    line-height: 1.4;
+    letter-spacing: -0.4px;
+}
+
+.analysis-report-content h1 {
+    margin: 32px 0 18px;
+    padding-bottom: 12px;
+
+    border-bottom: 1px solid var(--border);
+
+    font-size: 25px;
+}
+
+.analysis-report-content h2 {
+    margin: 30px 0 15px;
+    padding-bottom: 10px;
+
+    border-bottom: 1px solid var(--border);
+
+    font-size: 21px;
+}
+
+.analysis-report-content h3 {
+    margin: 25px 0 12px;
+    font-size: 17px;
+}
+
+.analysis-report-content h4 {
+    margin: 20px 0 10px;
+    font-size: 15px;
+}
+
+.analysis-report-content h5,
+.analysis-report-content h6 {
+    margin: 18px 0 8px;
+    font-size: 14px;
+}
+
+
+/* Paragraphs */
+
+.analysis-report-content p {
+    margin: 12px 0;
+    color: var(--text-secondary);
+}
+
+
+/* Bold and italic */
+
+.analysis-report-content strong {
+    color: var(--text-primary);
+    font-weight: 750;
+}
+
+.analysis-report-content em {
+    color: #cbd5e1;
+}
+
+
+/* Lists */
+
+.analysis-report-content ul,
+.analysis-report-content ol {
+    margin: 14px 0 18px;
+    padding-left: 26px;
+}
+
+.analysis-report-content li {
+    margin: 7px 0;
+    padding-left: 4px;
+
+    color: var(--text-secondary);
+}
+
+.analysis-report-content li::marker {
+    color: var(--accent);
+}
+
+.analysis-report-content li > ul,
+.analysis-report-content li > ol {
+    margin: 6px 0;
+}
+
+
+/* Links */
+
+.analysis-report-content a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-color: rgba(163, 230, 53, 0.4);
+    text-underline-offset: 3px;
+
+    overflow-wrap: anywhere;
+}
+
+.analysis-report-content a:hover {
+    color: var(--accent-hover);
+}
+
+
+/* Inline code */
+
+.analysis-report-content :not(pre) > code {
+    padding: 3px 7px;
+
+    border: 1px solid var(--border);
+    border-radius: 5px;
+
+    background: var(--bg-input);
+    color: var(--accent);
+
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.9em;
+}
+
+
+/* Code blocks */
+
+.analysis-report-content pre {
+    max-width: 100%;
+    margin: 18px 0;
+    padding: 18px;
+
+    overflow-x: auto;
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+
+    background: var(--bg-input);
+    color: #dce2ed;
+
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.7;
+
+    white-space: pre;
+}
+
+.analysis-report-content pre code {
+    padding: 0;
+
+    border: none;
+    background: transparent;
+    color: inherit;
+
+    font-family: inherit;
+    font-size: inherit;
+}
+
+
+/* Tables */
+
+.analysis-report-content table {
+    width: 100%;
+    min-width: 550px;
+
+    margin: 18px 0;
+
+    border-collapse: collapse;
+
+    font-size: 12px;
+}
+
+.analysis-report-content th,
+.analysis-report-content td {
+    padding: 12px 14px;
+
+    border: 1px solid var(--border);
+
+    text-align: left;
+    vertical-align: top;
+}
+
+.analysis-report-content th {
+    background: rgba(163, 230, 53, 0.08);
+    color: var(--accent);
+
+    font-weight: 750;
+}
+
+.analysis-report-content td {
+    background: rgba(15, 20, 32, 0.55);
+    color: var(--text-secondary);
+}
+
+.analysis-report-content tr:hover td {
+    background: var(--bg-hover);
+}
+
+/* Allow wide tables to scroll on smaller screens. */
+
+.analysis-report-content {
+    overflow-x: auto;
+}
+
+.analysis-report-content table {
+    display: block;
+    overflow-x: auto;
+}
+
+
+/* Blockquotes */
+
+.analysis-report-content blockquote {
+    margin: 18px 0;
+    padding: 14px 18px;
+
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+
+    background: rgba(163, 230, 53, 0.045);
+}
+
+.analysis-report-content blockquote p {
+    margin: 0;
+}
+
+
+/* Horizontal separators */
+
+.analysis-report-content hr {
+    margin: 26px 0;
+
+    border: none;
+    border-top: 1px solid var(--border);
+}
+
+
+/* Images, if present in Markdown */
+
+.analysis-report-content img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+
+    margin: 18px 0;
+
+    border-radius: var(--radius-md);
+}
+
+
+/* Nested content spacing */
+
+.analysis-report-content > :first-child {
+    margin-top: 0;
+}
+
+.analysis-report-content > :last-child {
+    margin-bottom: 0;
+}
+
+
+/* Mobile report styling */
+
+@media (max-width: 600px) {
+
+    .analysis-report-heading {
+        font-size: 21px;
+    }
+
+    .analysis-report-content {
+        font-size: 12px;
+        line-height: 1.8;
+    }
+
+    .analysis-report-content h1 {
+        font-size: 21px;
+    }
+
+    .analysis-report-content h2 {
+        font-size: 19px;
+    }
+
+    .analysis-report-content h3 {
+        font-size: 16px;
+    }
+
+    .analysis-report-content pre {
+        padding: 14px;
+        font-size: 11px;
+    }
+
+    .analysis-report-content th,
+    .analysis-report-content td {
+        padding: 9px 10px;
+    }
+}
+

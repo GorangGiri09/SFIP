@@ -1,14 +1,18 @@
+
 /**
+ * ============================================================================
  * File Name: dashboardHandlers.js
  * File Path: static/js/modules/dashboardHandlers.js
  * Project: Startup Failure Intelligence Platform (SFIP)
- *
+ * ----------------------------------------------------------------------------
  * Description:
  * Handles startup analysis, report rendering,
  * and analysis history.
  *
  * Dependencies:
  * - apiClient.js
+ * - Marked.js (Markdown parser)
+ * - DOMPurify (HTML sanitizer)
  *
  * API Endpoints:
  * POST /api/sessions
@@ -18,6 +22,7 @@
  * Note:
  * Analysis is expected to complete synchronously
  * according to the current frontend contract.
+ * ============================================================================
  */
 
 // =========================================
@@ -26,12 +31,14 @@
 
 import { apiRequest } from "../api/apiClient.js";
 
+
 // =========================================
 // 2. CONFIGURATION
 // =========================================
 
 const MIN_IDEA_LENGTH = 20;
 const MAX_IDEA_LENGTH = 10000;
+
 
 // =========================================
 // 3. SESSION RESPONSE HANDLING
@@ -64,6 +71,7 @@ function extractSession(response) {
     return session;
 }
 
+
 // =========================================
 // 4. STARTUP IDEA VALIDATION
 // =========================================
@@ -90,6 +98,7 @@ function validateStartupIdea(startupIdea) {
     return idea;
 }
 
+
 // =========================================
 // 5. CREATE ANALYSIS SESSION
 // =========================================
@@ -106,6 +115,7 @@ export async function createAnalysisSession(startupIdea) {
 
     return extractSession(response);
 }
+
 
 // =========================================
 // 6. GET ANALYSIS SESSION
@@ -128,6 +138,7 @@ export async function getAnalysisSession(sessionId) {
     return extractSession(response);
 }
 
+
 // =========================================
 // 7. FETCH ANALYSIS HISTORY
 // =========================================
@@ -147,6 +158,7 @@ export async function fetchAnalysisHistory() {
 
     return data.sessions;
 }
+
 
 // =========================================
 // 8. DASHBOARD MESSAGE
@@ -176,6 +188,7 @@ function showDashboardMessage(message, type = "info") {
     messageElement.hidden = false;
 }
 
+
 // =========================================
 // 9. REPORT RENDERING
 // =========================================
@@ -183,8 +196,14 @@ function showDashboardMessage(message, type = "info") {
 /**
  * Displays an analysis report safely.
  *
- * AI content is rendered using textContent.
- * No AI-generated HTML is executed.
+ * Processing:
+ * 1. Validate analysis status.
+ * 2. Validate AI-generated report.
+ * 3. Convert Markdown into HTML using Marked.
+ * 4. Sanitize HTML using DOMPurify.
+ * 5. Render formatted report.
+ *
+ * Original Groq Markdown remains unchanged.
  */
 
 export function renderReport(session) {
@@ -198,6 +217,7 @@ export function renderReport(session) {
         );
     }
 
+    // Clear previous report.
     reportContainer.replaceChildren();
 
     const status = String(
@@ -235,21 +255,58 @@ export function renderReport(session) {
         return;
     }
 
+    // Check Markdown parser and sanitizer availability.
+    if (
+        typeof window.marked?.parse !== "function" ||
+        typeof window.DOMPurify?.sanitize !== "function"
+    ) {
+        throw new Error(
+            "Markdown rendering libraries are unavailable. Check dashboard.html."
+        );
+    }
+
+    // Convert Groq Markdown into HTML.
+    const generatedHTML = window.marked.parse(
+        session.aiReport,
+        {
+            gfm: true,
+            breaks: false
+        }
+    );
+
+    // Sanitize generated HTML before rendering.
+    const safeHTML = window.DOMPurify.sanitize(
+        generatedHTML,
+        {
+            USE_PROFILES: {
+                html: true
+            }
+        }
+    );
+
     // Report heading.
     const heading = document.createElement("h2");
+
+    heading.className = "analysis-report-heading";
     heading.textContent = "Startup Analysis Report";
 
-    // Report content.
-    const report = document.createElement("pre");
+    // Report content wrapper.
+    const reportContent = document.createElement("article");
 
-    report.className = "analysis-report-content";
-    report.textContent = session.aiReport;
-    report.style.whiteSpace = "pre-wrap";
-    report.style.overflowWrap = "anywhere";
+    reportContent.className = "analysis-report-content";
 
-    reportContainer.append(heading, report);
+    // Insert only sanitized HTML.
+    reportContent.innerHTML = safeHTML;
+
+    // Append report elements.
+    reportContainer.append(
+        heading,
+        reportContent
+    );
+
     reportContainer.hidden = false;
 }
+
 
 /**
  * Scrolls to the report when it is displayed.
@@ -269,6 +326,7 @@ function scrollToReport() {
         block: "start"
     });
 }
+
 
 // =========================================
 // 10. HANDLE ANALYSIS SUBMISSION
@@ -308,7 +366,7 @@ export async function handleAnalysisSubmit(event) {
         return;
     }
 
-    // Preserve the original button appearance.
+    // Preserve original button appearance.
     const originalButtonHTML = analyzeButton?.innerHTML;
 
     if (analyzeButton) {
@@ -323,9 +381,10 @@ export async function handleAnalysisSubmit(event) {
 
     let session;
 
-    // STEP 1: Submit the analysis request.
+    // STEP 1: Submit analysis request.
     try {
         session = await createAnalysisSession(startupIdea);
+
     } catch (error) {
         console.error(
             "Analysis submission error:",
@@ -338,10 +397,10 @@ export async function handleAnalysisSubmit(event) {
                 : error?.message ||
                   "Analysis request failed. Please try again.";
 
-        // The session may already exist even if the request failed.
-        // Refresh history, but preserve the original error message.
+        // Refresh history independently.
         try {
             await loadAnalysisHistory();
+
         } catch (historyError) {
             console.error(
                 "History refresh error:",
@@ -351,8 +410,9 @@ export async function handleAnalysisSubmit(event) {
 
         showDashboardMessage(message, "error");
         return;
+
     } finally {
-        // Restore the button once the request settles.
+        // Restore button after request settles.
         if (analyzeButton) {
             analyzeButton.disabled = false;
 
@@ -364,17 +424,18 @@ export async function handleAnalysisSubmit(event) {
         }
     }
 
-    // STEP 2: Read the backend's analysis status.
+    // STEP 2: Read backend analysis status.
     const status = String(
         session.status ?? "UNKNOWN"
     ).toUpperCase();
 
-    // STEP 3: Render the report independently of analysis status.
+    // STEP 3: Render report.
     let reportRenderFailed = false;
 
     try {
         renderReport(session);
         scrollToReport();
+
     } catch (error) {
         reportRenderFailed = true;
 
@@ -384,8 +445,7 @@ export async function handleAnalysisSubmit(event) {
         );
     }
 
-    // STEP 4: Display feedback without confusing UI errors
-    // with the backend's actual analysis result.
+    // STEP 4: Display appropriate feedback.
     if (reportRenderFailed) {
         showDashboardMessage(
             status === "COMPLETED"
@@ -393,16 +453,19 @@ export async function handleAnalysisSubmit(event) {
                 : `Analysis status: ${status}. Report display failed.`,
             "error"
         );
+
     } else if (status === "COMPLETED") {
         showDashboardMessage(
             "Startup analysis completed successfully.",
             "success"
         );
+
     } else if (status === "FAILED") {
         showDashboardMessage(
             "Analysis failed. Please try again.",
             "error"
         );
+
     } else {
         showDashboardMessage(
             `Analysis status: ${status}`,
@@ -411,9 +474,9 @@ export async function handleAnalysisSubmit(event) {
     }
 
     // STEP 5: Refresh history independently.
-    // History errors must not change the analysis result.
     await loadAnalysisHistory();
 }
+
 
 // =========================================
 // 11. OPEN EXISTING ANALYSIS
@@ -440,6 +503,7 @@ async function handleOpenAnalysis(sessionId) {
                 "Analysis report loaded successfully.",
                 "success"
             );
+
         } else {
             showDashboardMessage(
                 status === "FAILED"
@@ -448,6 +512,7 @@ async function handleOpenAnalysis(sessionId) {
                 status === "FAILED" ? "error" : "info"
             );
         }
+
     } catch (error) {
         console.error(
             "Report retrieval error:",
@@ -461,6 +526,7 @@ async function handleOpenAnalysis(sessionId) {
         );
     }
 }
+
 
 // =========================================
 // 12. RENDER ANALYSIS HISTORY
@@ -493,6 +559,7 @@ function renderAnalysisHistory(sessions) {
 
     sessions.forEach((session) => {
         const item = document.createElement("div");
+
         item.className = "history-item";
 
         // Startup idea.
@@ -518,6 +585,7 @@ function renderAnalysisHistory(sessions) {
             )
                 ? "Creation date unavailable"
                 : `Created: ${parsedDate.toLocaleString()}`;
+
         } else {
             date.textContent = "Creation date unavailable";
         }
@@ -545,6 +613,7 @@ function renderAnalysisHistory(sessions) {
     });
 }
 
+
 // =========================================
 // 13. LOAD ANALYSIS HISTORY
 // =========================================
@@ -556,7 +625,9 @@ export async function loadAnalysisHistory() {
 
     try {
         const sessions = await fetchAnalysisHistory();
+
         renderAnalysisHistory(sessions);
+
     } catch (error) {
         console.error(
             "Analysis history error:",
